@@ -173,7 +173,7 @@ export default function TeamsPage() {
     const items = [
       {
         key: 'view',
-        icon: <Eye className="w-4 h-4" />,
+        icon: '👁️',
         label: 'View Details',
         onClick: () => router.push(`/dashboard/teams/${team._id}`),
       },
@@ -183,13 +183,13 @@ export default function TeamsPage() {
       items.push(
         {
           key: 'edit',
-          icon: <Edit className="w-4 h-4" />,
+          icon: '✏️',
           label: 'Edit Team',
           onClick: () => router.push(`/dashboard/teams/${team._id}/edit`),
         },
         {
           key: 'invite',
-          icon: <UserPlus className="w-4 h-4" />,
+          icon: '👤➕',
           label: 'Invite Members',
           onClick: () => {
             setSelectedTeam(team);
@@ -198,7 +198,7 @@ export default function TeamsPage() {
         },
         {
           key: 'settings',
-          icon: <Settings className="w-4 h-4" />,
+          icon: '⚙️',
           label: 'Team Settings',
           onClick: () => router.push(`/dashboard/teams/${team._id}/settings`),
         }
@@ -210,7 +210,7 @@ export default function TeamsPage() {
         type: 'divider',
       }, {
         key: 'delete',
-        icon: <Trash2 className="w-4 h-4" />,
+        icon: '🗑️',
         label: 'Delete Team',
         danger: true,
         onClick: () => {
@@ -229,7 +229,7 @@ export default function TeamsPage() {
         type: 'divider',
       }, {
         key: 'leave',
-        icon: <User className="w-4 h-4" />,
+        icon: '👤',
         label: 'Leave Team',
         danger: true,
         onClick: () => {
@@ -250,9 +250,9 @@ export default function TeamsPage() {
 
   const getVisibilityIcon = (visibility) => {
     switch (visibility) {
-      case 'public': return <Globe className="w-4 h-4 text-green-400" />;
-      case 'private': return <Lock className="w-4 h-4 text-gray-400" />;
-      default: return <Lock className="w-4 h-4 text-gray-400" />;
+      case 'public': return '🌍';
+      case 'private': return '🔒';
+      default: return '🔒';
     }
   };
 
@@ -283,11 +283,10 @@ export default function TeamsPage() {
         </div>
         <Button
           type="primary"
-          icon={<Plus className="w-4 h-4" />}
           onClick={() => router.push('/dashboard/teams/new')}
           size="large"
         >
-          Create Team
+          ➕ Create Team
         </Button>
       </div>
 
@@ -296,7 +295,7 @@ export default function TeamsPage() {
         <Col xs={12} sm={6}>
           <Card className="bg-black/20 backdrop-blur-xl border-white/10">
             <div className="text-center">
-              <Users className="w-8 h-8 text-blue-400 mb-2" />
+              <div className="text-2xl mb-2">👥</div>
               <Title level={3} className="text-white mb-0">{teams.length}</Title>
               <Text className="text-gray-400">Total Teams</Text>
             </div>
@@ -305,7 +304,7 @@ export default function TeamsPage() {
         <Col xs={12} sm={6}>
           <Card className="bg-black/20 backdrop-blur-xl border-white/10">
             <div className="text-center">
-              <Crown className="w-8 h-8 text-yellow-400 mb-2" />
+              <div className="text-2xl mb-2">👑</div>
               <Title level={3} className="text-white mb-0">
                 {teams.filter(t => isOwner(t)).length}
               </Title>
@@ -316,7 +315,7 @@ export default function TeamsPage() {
         <Col xs={12} sm={6}>
           <Card className="bg-black/20 backdrop-blur-xl border-white/10">
             <div className="text-center">
-              <User className="w-8 h-8 text-green-400 mb-2" />
+              <div className="text-2xl mb-2">👤</div>
               <Title level={3} className="text-white mb-0">
                 {teams.reduce((acc, team) => acc + team.members.length, 0)}
               </Title>
@@ -327,7 +326,7 @@ export default function TeamsPage() {
         <Col xs={12} sm={6}>
           <Card className="bg-black/20 backdrop-blur-xl border-white/10">
             <div className="text-center">
-              <Project className="w-8 h-8 text-purple-400 mb-2" />
+              <div className="text-2xl mb-2">📁</div>
               <Title level={3} className="text-white mb-0">
                 {teams.reduce((acc, team) => acc + (team.projects?.length || 0), 0)}
               </Title>
@@ -462,13 +461,13 @@ export default function TeamsPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <Space>
-                      <User className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-400">👤</span>
                       <Text className="text-gray-400">
                         {team.members.length} member{team.members.length > 1 ? 's' : ''}
                       </Text>
                     </Space>
                     <Space>
-                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-400">📅</span>
                       <Text className="text-gray-400">
                         Created {new Date(team.createdAt).toLocaleDateString()}
                       </Text>
@@ -477,7 +476,7 @@ export default function TeamsPage() {
                   
                   {team.projects && team.projects.length > 0 && (
                     <div className="flex items-center gap-2">
-                      <Project className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-400">📁</span>
                       <Text className="text-gray-400 text-xs">
                         {team.projects.length} active project{team.projects.length > 1 ? 's' : ''}
                       </Text>

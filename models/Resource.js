@@ -147,7 +147,41 @@ const resourceSchema = new mongoose.Schema({
     createdAt: {
       type: Date,
       default: Date.now
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now
     }
+  }],
+  averageRating: {
+    type: Number,
+    default: 0
+  },
+  ratingCount: {
+    type: Number,
+    default: 0
+  },
+  comments: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    content: {
+      type: String,
+      required: true
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  bookmarkedBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   }],
   relatedResources: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -205,4 +239,9 @@ resourceSchema.index({ priority: 1 });
 resourceSchema.index({ visibility: 1 });
 resourceSchema.index({ createdAt: -1 });
 
-export default mongoose.models.Resource || mongoose.model('Resource', resourceSchema);
+// Clear the model cache to ensure schema changes take effect
+if (mongoose.models.Resource) {
+  delete mongoose.models.Resource;
+}
+
+export default mongoose.model('Resource', resourceSchema);

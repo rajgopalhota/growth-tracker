@@ -27,7 +27,7 @@ import {
 import { 
   Save,
   Link,
-  Upload,
+  Upload as UploadIcon,
   Plus,
   Trash2,
   Edit,
@@ -147,11 +147,11 @@ export default function ResourceCreator() {
 
   const getTypeIcon = (type) => {
     switch (type) {
-      case 'video': return <Video className="w-4 h-4" />;
-      case 'document': return <FileText className="w-4 h-4" />;
-      case 'article': return <BookOpen className="w-4 h-4" />;
-      case 'tool': return <Wrench className="w-4 h-4" />;
-      default: return <Link className="w-4 h-4" />;
+      case 'video': return '🎥';
+      case 'document': return '📄';
+      case 'article': return '📖';
+      case 'tool': return '🔧';
+      default: return '🔗';
     }
   };
 
@@ -192,7 +192,7 @@ export default function ResourceCreator() {
                 </Title>
                 <Button
                   type="primary"
-                  icon={<Save className="w-4 h-4" />}
+                  icon="💾"
                   htmlType="submit"
                   loading={loading}
                 >
@@ -375,7 +375,7 @@ export default function ResourceCreator() {
                       value: 'private', 
                       label: (
                         <Space>
-                          <Lock className="w-4 h-4" />
+                          <span>🔒</span>
                           Private
                         </Space>
                       )
@@ -384,7 +384,7 @@ export default function ResourceCreator() {
                       value: 'team', 
                       label: (
                         <Space>
-                          <Users className="w-4 h-4" />
+                          <span>👥</span>
                           Team
                         </Space>
                       )
@@ -393,7 +393,7 @@ export default function ResourceCreator() {
                       value: 'public', 
                       label: (
                         <Space>
-                          <Globe className="w-4 h-4" />
+                          <span>🌍</span>
                           Public
                         </Space>
                       )

@@ -23,9 +23,7 @@ export default function Header() {
             </button>
             
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-sm">GT</span>
-              </div>
+              <img src={"/logo.png"} alt="GrowthTracker" className="w-8 h-8 rounded-full object-cover" />
               <div className="hidden sm:block">
                 <h1 className="text-xl font-bold bg-gradient-to-r from-white via-orange-200 to-white bg-clip-text text-transparent">
                   GrowthTracker

@@ -85,13 +85,21 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
-  }
+  },
+  bookmarkedResources: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Resource'
+  }]
 }, {
   timestamps: true
 });
 
 // Index for better performance
-userSchema.index({ email: 1 });
 userSchema.index({ teams: 1 });
 
-export default mongoose.models.User || mongoose.model('User', userSchema);
+// Clear the model cache to ensure schema changes take effect
+if (mongoose.models.User) {
+  delete mongoose.models.User;
+}
+
+export default mongoose.model('User', userSchema);
