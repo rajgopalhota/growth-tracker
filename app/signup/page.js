@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '@/lib/notifications';
 import Link from 'next/link';
 
 export default function SignupPage() {

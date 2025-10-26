@@ -39,11 +39,8 @@ import {
   DeleteOutlined,
   EditOutlined
 } from '@ant-design/icons';
-import { EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
-import toast from 'react-hot-toast';
+import DynamicQuill from '@/components/DynamicQuill';
+import toast from '@/lib/notifications';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -65,30 +62,7 @@ export default function NoteEdit() {
   const [shareEmail, setShareEmail] = useState('');
   const [sharePermission, setSharePermission] = useState('read');
   const [collaborators, setCollaborators] = useState([]);
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: 'text-blue-400 hover:text-blue-300 underline',
-        },
-      }),
-      Image.configure({
-        HTMLAttributes: {
-          class: 'max-w-full h-auto rounded-lg',
-        },
-      }),
-    ],
-    content: '',
-    immediatelyRender: false,
-    editorProps: {
-      attributes: {
-        class: 'prose prose-invert max-w-none focus:outline-none min-h-[400px] p-4',
-      },
-    },
-  });
+  const [editorContent, setEditorContent] = useState('');
 
   useEffect(() => {
     if (noteId) {
@@ -97,8 +71,8 @@ export default function NoteEdit() {
   }, [noteId]);
 
   useEffect(() => {
-    if (note && editor) {
-      editor.commands.setContent(note.contentHtml || note.content);
+    if (note) {
+      setEditorContent(note.contentHtml || note.content || '');
       form.setFieldsValue({
         title: note.title,
         category: note.category,
@@ -109,7 +83,7 @@ export default function NoteEdit() {
       setTags(note.tags || []);
       setCollaborators(note.collaborators || []);
     }
-  }, [note, editor, form]);
+  }, [note, form]);
 
   const fetchNote = async () => {
     if (!noteId) {
@@ -139,8 +113,8 @@ export default function NoteEdit() {
   const handleSave = async (values) => {
     try {
       setSaving(true);
-      const content = editor?.getHTML() || '';
-      const textContent = editor?.getText() || '';
+      const content = editorContent;
+      const textContent = content.replace(/<[^>]*>/g, '');
 
       const noteData = {
         ...values,
@@ -446,10 +420,11 @@ export default function NoteEdit() {
             <Col span={24}>
               <div className="mb-4">
                 <Text className="text-white">Content</Text>
-                <div className="mt-2 border border-white/10 rounded-lg bg-white/5">
-                  <EditorContent 
-                    editor={editor}
-                    className="min-h-[400px]"
+                <div className="mt-2 border border-white/10 rounded-lg bg-white/5 overflow-hidden">
+                  <DynamicQuill
+                    value={editorContent}
+                    onChange={setEditorContent}
+                    className="min-h-[400px] bg-transparent"
                   />
                 </div>
               </div>

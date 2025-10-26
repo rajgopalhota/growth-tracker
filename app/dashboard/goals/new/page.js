@@ -40,7 +40,7 @@ import {
   Clock
 } from 'lucide-react';
 import dayjs from 'dayjs';
-import toast from 'react-hot-toast';
+import toast from '@/lib/notifications';
 
 const { TextArea } = Input;
 const { Option } = Select;

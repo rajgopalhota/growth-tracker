@@ -180,6 +180,63 @@ export default function NotificationsPage() {
     }
   };
 
+  const handleAcceptTeamInvite = async (notification) => {
+    try {
+      const teamId = notification.data?.itemId || notification.data?.teamId;
+      if (!teamId) {
+        message.error('Team ID not found');
+        return;
+      }
+
+      const response = await fetch('/api/teams/invite/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId, accept: true })
+      });
+
+      if (response.ok) {
+        message.success('Team invitation accepted');
+        await handleDeleteNotification(notification._id);
+        fetchNotifications();
+        router.push(`/dashboard/teams/${teamId}`);
+      } else {
+        const data = await response.json();
+        message.error(data.error || 'Failed to accept invitation');
+      }
+    } catch (error) {
+      console.error('Error accepting team invite:', error);
+      message.error('Failed to accept team invitation');
+    }
+  };
+
+  const handleDeclineTeamInvite = async (notification) => {
+    try {
+      const teamId = notification.data?.itemId || notification.data?.teamId;
+      if (!teamId) {
+        message.error('Team ID not found');
+        return;
+      }
+
+      const response = await fetch('/api/teams/invite/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId, accept: false })
+      });
+
+      if (response.ok) {
+        message.success('Team invitation declined');
+        await handleDeleteNotification(notification._id);
+        fetchNotifications();
+      } else {
+        const data = await response.json();
+        message.error(data.error || 'Failed to decline invitation');
+      }
+    } catch (error) {
+      console.error('Error declining team invite:', error);
+      message.error('Failed to decline team invitation');
+    }
+  };
+
   const filteredNotifications = notifications.filter(notification => {
     const matchesSearch = notification.message.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || notification.type === filterType;
@@ -379,15 +436,41 @@ export default function NotificationsPage() {
                   className={`cursor-pointer hover:bg-white/5 transition-colors ${
                     !notification.read ? 'bg-blue-500/10 border-l-4 border-l-blue-500' : ''
                   }`}
-                  onClick={() => handleNotificationClick(notification)}
+                  onClick={() => {
+                    if (notification.type !== 'team_invite') {
+                      handleNotificationClick(notification);
+                    }
+                  }}
                   actions={[
-                    <Dropdown
-                      menu={{ items: getMenuItems(notification) }}
-                      trigger={['click']}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Dropdown>,
+                    notification.type === 'team_invite' ? (
+                      <Space key="actions" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          type="primary"
+                          size="small"
+                          icon={<CheckCircle2 className="w-3 h-3" />}
+                          onClick={() => handleAcceptTeamInvite(notification)}
+                        >
+                          Accept
+                        </Button>
+                        <Button
+                          danger
+                          size="small"
+                          icon={<X className="w-3 h-3" />}
+                          onClick={() => handleDeclineTeamInvite(notification)}
+                        >
+                          Decline
+                        </Button>
+                      </Space>
+                    ) : (
+                      <Dropdown
+                        key="menu"
+                        menu={{ items: getMenuItems(notification) }}
+                        trigger={['click']}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Dropdown>
+                    )
                   ]}
                 >
                   <List.Item.Meta

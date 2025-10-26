@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '@/lib/notifications';
 import Link from 'next/link';
 
 export default function LoginPage() {

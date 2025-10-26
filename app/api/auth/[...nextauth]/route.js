@@ -17,20 +17,24 @@ export const authOptions = {
         await connectMongo();
 
         const user = await User.findOne({ email: credentials.email });
-        if (!user || !user.password) {
-          throw new Error('Email/password login not allowed for this user.');
+        if (!user || !user.passwordHash) {
+          throw new Error('Invalid email or password.');
         }
 
-        const isMatch = await compare(credentials.password, user.password);
+        const isMatch = await compare(credentials.password, user.passwordHash);
         if (!isMatch) {
           throw new Error('Invalid email or password.');
         }
+
+        // Update last seen
+        user.lastSeen = new Date();
+        await user.save();
 
         return {
           id: user._id.toString(),
           name: user.name,
           email: user.email,
-          image: user.image,
+          avatar: user.avatar,
           role: user.role,
         };
       },
@@ -38,14 +42,28 @@ export const authOptions = {
   ],
 
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
         token.role = user.role || "user";
+        token.avatar = user.avatar;
       }
+      
+      // When session is updated, refresh user data from database
+      if (trigger === 'update' && token.id) {
+        await connectMongo();
+        const existingUser = await User.findById(token.id).lean();
+        if (existingUser) {
+          token.role = existingUser.role || "user";
+          token.avatar = existingUser.avatar;
+          token.name = existingUser.name;
+        }
+      }
+      
       if (!token.role && token.id) {
         const existingUser = await User.findById(token.id).lean();
         token.role = existingUser?.role || "user";
+        token.avatar = existingUser?.avatar;
       }
       return token;
     },
@@ -54,19 +72,10 @@ export const authOptions = {
       if (token?.id) {
         session.user.id = token.id;
         session.user.role = token.role || "user";
+        session.user.avatar = token.avatar;
+        session.user.name = token.name;
       }
       return session;
-    },
-
-    async signIn({ user, account, profile }) {
-      await connectMongo();
-
-      const existingUser = await User.findOne({ email: user.email });
-      if (!existingUser) {
-        // Create new user during sign up
-        return true;
-      }
-      return true;
     },
   },
 
@@ -76,6 +85,11 @@ export const authOptions = {
 
   session: {
     strategy: 'jwt',
+    maxAge: 90 * 24 * 60 * 60, // 90 days in seconds
+  },
+
+  jwt: {
+    maxAge: 90 * 24 * 60 * 60, // 90 days in seconds
   },
 };
 

@@ -79,7 +79,8 @@ export default function TeamsPage() {
       const response = await fetch('/api/teams');
       if (response.ok) {
         const data = await response.json();
-        setTeams(data.teams || []);
+        // API returns array directly
+        setTeams(Array.isArray(data) ? data : []);
       } else {
         message.error('Failed to fetch teams');
         setTeams([]);
@@ -162,7 +163,10 @@ export default function TeamsPage() {
   });
 
   const getUserRole = (team) => {
-    const member = team.members.find(m => m.user._id === session?.user?.id);
+    const member = team.members.find(m => 
+      m.user?._id?.toString() === session?.user?.id?.toString() || 
+      m.user?.toString() === session?.user?.id?.toString()
+    );
     return member?.role || 'member';
   };
 

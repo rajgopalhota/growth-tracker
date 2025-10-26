@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Layout, Button, Space, Typography, Avatar, Dropdown, Menu, Drawer, Popconfirm, Switch } from 'antd';
 import {
-  Menu as MenuIcon, User, LogOut, Settings, Bell, Home, FileText, CheckSquare, Target, Users, BookOpen, BarChart3, Zap, Download, Crown, Shield, X
+  Menu as MenuIcon, User, LogOut, Settings, Bell, Home, FileText, CheckSquare, Target, Users, BookOpen, BarChart3, Zap, Download, Crown, Shield, X, FolderKanban
 } from 'lucide-react';
 
 const { Header, Content, Sider } = Layout;
@@ -17,7 +17,7 @@ const HeadCard = ({ session, onClose }) => {
     <div className="sticky top-0 z-20 bg-gradient-to-b from-gray-950 to-black/95 backdrop-blur-2xl overflow-hidden">
       {/* Premium gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-purple-900/10 via-transparent to-pink-900/10 pointer-events-none" />
-      
+
       {/* Content */}
       <div className="relative px-6 py-4 md:py-5">
         <div className="flex items-center justify-between">
@@ -28,7 +28,7 @@ const HeadCard = ({ session, onClose }) => {
               <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl blur-md group-hover:blur-lg transition-all duration-300" />
               <div className="relative">
                 <img
-                  src={session?.user?.image}
+                  src={`/avatars/${session?.user?.avatar || 'avatar1.png'}`}
                   alt="user"
                   className="w-12 h-12 rounded-2xl ring-2 ring-white/10 object-cover backdrop-blur-sm"
                 />
@@ -45,7 +45,7 @@ const HeadCard = ({ session, onClose }) => {
               <p className="font-semibold text-white text-base truncate max-w-[150px]">
                 {session?.user?.name}
               </p>
-              
+
               {session?.user?.role === "admin" || session?.user?.role === "superadmin" ? (
                 <div className="flex items-center gap-1.5">
                   {session?.user?.role === "superadmin" ? (
@@ -94,8 +94,10 @@ const HeadCard = ({ session, onClose }) => {
   );
 };
 
-// Sidebar Component - Premium Design
-const Sidebar = ({ session, onClose, onRedirect, onLogout, navItems, animationsEnabled, toggleAnimations }) => {
+// Sidebar Component - Premium Design with dynamic teams
+const Sidebar = ({ session, onClose, onRedirect, navItems, teams }) => {
+  const pathname = usePathname();
+
   return (
     <div className="flex flex-col h-full bg-black">
       <HeadCard session={session} onClose={onClose} />
@@ -128,98 +130,55 @@ const Sidebar = ({ session, onClose, onRedirect, onLogout, navItems, animationsE
           </button>
         ))}
 
-        {/* Settings */}
-        <div className="pt-4">
-          <div className="flex items-center gap-2 mb-6 px-2">
-            <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Settings</span>
-            <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
-          </div>
-
-          <button
-            onClick={() => onRedirect("/dashboard/settings")}
-            className="w-full flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-200 text-white hover:bg-orange-500/15 hover:translate-x-1 group focus:outline-none"
-          >
-            <Settings className="w-5 h-5 text-orange-400 group-hover:scale-110 transition-transform" />
-            <span className="font-medium">Account Settings</span>
-          </button>
-
-          {/* Custom Export */}
-          <button
-            onClick={() => onRedirect("/dashboard/export")}
-            className="w-full flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-200 text-white hover:bg-red-500/15 hover:translate-x-1 group focus:outline-none"
-          >
-            <Download className="w-5 h-5 text-red-400 group-hover:scale-110 transition-transform" />
-            <span className="font-medium">Custom Export</span>
-          </button>
-
-          {/* User Management (Admin/Superadmin only) */}
-          {(session?.user?.role === "admin" || session?.user?.role === "superadmin") && (
-            <button
-              onClick={() => onRedirect("/dashboard/users")}
-              className="w-full flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-200 text-white hover:bg-cyan-500/15 hover:translate-x-1 group focus:outline-none"
-            >
-              <Users className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
-              <span className="font-medium">Users</span>
-            </button>
-          )}
-
-          {/* ⚡ Performance Mode Toggle */}
-          <div
-            className="w-full flex items-center justify-between px-3 py-3 rounded-xl mt-2 cursor-pointer hover:bg-orange-500/15 hover:translate-x-1 transition-all duration-200"
-            onClick={() => toggleAnimations()}
-          >
-            <div className="flex items-center space-x-3">
-              <Zap className="w-5 h-5 text-yellow-400 group-hover:scale-110 transition-transform" />
-              <span className="font-medium text-white">Animations</span>
+        {/* Teams Section */}
+        {teams && teams.length > 0 && (
+          <div className="pt-4">
+            <div className="flex items-center gap-2 mb-6 px-2">
+              <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Teams</span>
+              <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
             </div>
-            <Switch
-              checked={animationsEnabled}
-              checkedChildren="On"
-              unCheckedChildren="Off"
-            />
+
+            <div className="space-y-1">
+              {teams.map((team) => (
+                <div key={team._id} className="space-y-1">
+                  <button
+                    onClick={() => onRedirect(`/dashboard/teams/${team._id}`)}
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${pathname === `/dashboard/teams/${team._id}`
+                        ? 'bg-cyan-500/20 text-cyan-300'
+                        : 'text-gray-400 hover:bg-cyan-500/10 hover:text-cyan-300'
+                      }`}
+                  >
+                    <Users className="w-4 h-4" />
+                    <span className="text-sm font-medium flex-1 truncate">{team.name}</span>
+                  </button>
+
+                  {/* Projects */}
+                  {team.projects && team.projects.length > 0 && (
+                    <div className="ml-6 space-y-1">
+                      {team.projects.map((project) => (
+                        <button
+                          key={project._id}
+                          onClick={() => onRedirect(`/dashboard/teams/${team._id}/projects/${project._id}`)}
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-all ${pathname === `/dashboard/teams/${team._id}/projects/${project._id}`
+                              ? 'bg-blue-500/20 text-blue-300'
+                              : 'text-gray-500 hover:bg-blue-500/10 hover:text-blue-300'
+                            }`}
+                        >
+                          <FolderKanban className="w-3.5 h-3.5" />
+                          <span className="flex-1 truncate">{project.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* 🔻 Sticky Footer (Logout) - Enhanced */}
-      <div className="sticky bottom-0 bg-gradient-to-r from-purple-800/10 to-pink-500/10 backdrop-blur-sm">
-        <Popconfirm
-          title="Sign out of your account?"
-          description="You'll need to sign in again to access your data."
-          onConfirm={onLogout}
-          okText="Sign Out"
-          cancelText="Cancel"
-        >
-          <button className="relative w-full group focus:outline-none overflow-hidden">
-            {/* Glass background with border */}
-            <div className="relative flex items-center gap-3 px-4 py-3.5 rounded-xl bg-gradient-to-br from-red-500/5 to-red-500/[0.02] backdrop-blur-sm transition-all duration-300 group-hover:bg-red-500/15 group-hover:shadow-lg group-hover:shadow-red-500/15">
-              {/* Subtle animated gradient on hover */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              {/* Icon with enhanced container */}
-              <div className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-red-500/15 border border-red-500/20 group-hover:bg-red-500/20 group-hover:border-red-500/30 transition-all duration-300">
-                <LogOut className="w-5 h-5 text-red-400 group-hover:text-red-300 group-hover:scale-110 transition-all duration-300" />
-                {/* Subtle glow */}
-                <div className="absolute inset-0 rounded-lg bg-red-500/20 blur-md opacity-0 group-hover:opacity-50 transition-opacity duration-300" />
-              </div>
-              
-              <span className="relative font-semibold text-red-300 group-hover:text-red-200 transition-colors duration-300">
-                Sign Out
-              </span>
 
-              {/* Danger indicator dot */}
-              <div className="ml-auto flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500/50 animate-pulse" style={{ animationDelay: '0.5s' }} />
-              </div>
-
-              {/* Light refraction edge */}
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/[0.03] via-transparent to-transparent pointer-events-none" />
-            </div>
-          </button>
-        </Popconfirm>
-      </div>
     </div>
   );
 };
@@ -229,7 +188,7 @@ export default function DashboardLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [animationsEnabled, setAnimationsEnabled] = useState(true);
+  const [teams, setTeams] = useState([]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -252,6 +211,24 @@ export default function DashboardLayout({ children }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [drawerVisible]);
 
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchTeams();
+    }
+  }, [status]);
+
+  const fetchTeams = async () => {
+    try {
+      const response = await fetch('/api/teams');
+      if (response.ok) {
+        const data = await response.json();
+        setTeams(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+    }
+  };
+
   const handleLogout = async () => {
     await signOut({ callbackUrl: '/' });
   };
@@ -261,18 +238,11 @@ export default function DashboardLayout({ children }) {
     setDrawerVisible(false);
   };
 
-  const toggleAnimations = () => {
-    setAnimationsEnabled(!animationsEnabled);
-  };
-
   const navigation = useMemo(() => [
     { name: 'Dashboard', href: '/dashboard', icon: Home, color: 'text-blue-400', hoverColor: 'hover:bg-blue-500/15' },
-    { name: 'Notes', href: '/dashboard/notes', icon: FileText, color: 'text-purple-400', hoverColor: 'hover:bg-purple-500/15' },
     { name: 'Todos', href: '/dashboard/todos', icon: CheckSquare, color: 'text-emerald-400', hoverColor: 'hover:bg-emerald-500/15' },
     { name: 'Goals', href: '/dashboard/goals', icon: Target, color: 'text-orange-400', hoverColor: 'hover:bg-orange-500/15', badge: 'New' },
     { name: 'Teams', href: '/dashboard/teams', icon: Users, color: 'text-cyan-400', hoverColor: 'hover:bg-cyan-500/15' },
-    { name: 'Resources', href: '/dashboard/resources', icon: BookOpen, color: 'text-indigo-400', hoverColor: 'hover:bg-indigo-500/15' },
-    { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, color: 'text-pink-400', hoverColor: 'hover:bg-pink-500/15', badge: 'Beta' },
   ], []);
 
   if (status === 'loading') {
@@ -290,7 +260,7 @@ export default function DashboardLayout({ children }) {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-40 bg-black/20 backdrop-blur-xl border-b border-white/10">
-        <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex items-center justify-between px-3 py-4">
           {/* Left side - Logo and Menu */}
           <div className="flex items-center gap-4">
             <Button
@@ -327,27 +297,19 @@ export default function DashboardLayout({ children }) {
             />
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                {session?.user?.image ? (
-                  <img
-                    src={session.user.image}
-                    alt={session.user.name}
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <User className="w-4 h-4 text-white" />
-                )}
+                <img
+                  src={`/avatars/${session?.user?.avatar || 'avatar11.png'}`}
+                  alt={session?.user?.name}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
               </div>
-              <div className="hidden sm:block">
+              <button
+                onClick={() => router.push('/dashboard/settings')}
+                className="hidden sm:block cursor-pointer hover:opacity-80 transition-opacity"
+              >
                 <p className="text-sm font-medium text-white">{session?.user?.name}</p>
                 <p className="text-xs text-gray-400">{session?.user?.email}</p>
-              </div>
-              <Button
-                type="text"
-                icon={<LogOut className="w-4 h-4" />}
-                className="text-white hover:bg-white/10 border-0"
-                onClick={handleLogout}
-                title="Sign out"
-              />
+              </button>
             </div>
           </div>
         </div>
@@ -355,7 +317,7 @@ export default function DashboardLayout({ children }) {
 
       {/* Main Content */}
       <main className="pt-20 min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 overflow-x-hidden">
-        <div className="p-6 max-w-full">
+        <div className="p-1 max-w-full">
           {children}
         </div>
       </main>
@@ -369,139 +331,16 @@ export default function DashboardLayout({ children }) {
         className="drawer-custom"
         maskClosable={true}
         keyboard={true}
-        destroyOnClose
-        width={320}
-        bodyStyle={{ padding: 0, background: 'transparent' }}
+        destroyOnHidden
       >
         <Sidebar
           session={session}
           onClose={() => setDrawerVisible(false)}
           onRedirect={handleRedirect}
-          onLogout={handleLogout}
           navItems={navigation}
-          animationsEnabled={animationsEnabled}
-          toggleAnimations={toggleAnimations}
+          teams={teams}
         />
       </Drawer>
-
-      <style jsx global>{`
-        /* Ant Design Drawer Styling */
-        .drawer-custom .ant-drawer-content {
-          background: transparent !important;
-        }
-
-        .drawer-custom .ant-drawer-body {
-          padding: 0 !important;
-          background: transparent !important;
-        }
-
-        .drawer-custom .ant-drawer-header {
-          display: none !important;
-        }
-
-        .drawer-custom .ant-drawer-wrapper-body {
-          background: transparent !important;
-        }
-
-        .ant-btn-text {
-          color: rgba(255, 255, 255, 0.7) !important;
-        }
-
-        .ant-btn-text:hover {
-          color: white !important;
-          background: rgba(255, 255, 255, 0.1) !important;
-        }
-
-        .ant-popconfirm .ant-popover-inner {
-          background: rgba(0, 0, 0, 0.9) !important;
-          border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        }
-
-        .ant-popconfirm .ant-popover-title {
-          color: white !important;
-        }
-
-        .ant-popconfirm .ant-popover-inner-content {
-          color: rgba(255, 255, 255, 0.8) !important;
-        }
-
-        .ant-switch-checked {
-          background-color: #f97316 !important;
-        }
-
-        /* Premium Switch Styling */
-        .premium-switch .ant-switch-handle {
-          background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-        }
-
-        .premium-switch .ant-switch-handle::before {
-          background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
-        }
-
-        /* Premium Popconfirm Styling */
-        .ant-popconfirm .ant-popover-inner {
-          background: rgba(0, 0, 0, 0.95) !important;
-          border: 1px solid rgba(255, 255, 255, 0.2) !important;
-          backdrop-filter: blur(20px) !important;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
-        }
-
-        .ant-popconfirm .ant-popover-title {
-          color: white !important;
-          font-weight: 600 !important;
-        }
-
-        .ant-popconfirm .ant-popover-inner-content {
-          color: rgba(255, 255, 255, 0.9) !important;
-        }
-
-        .ant-popconfirm .ant-btn-primary {
-          background: linear-gradient(135deg, #f97316, #dc2626) !important;
-          border: none !important;
-          box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3) !important;
-        }
-
-        .ant-popconfirm .ant-btn-default {
-          background: rgba(255, 255, 255, 0.1) !important;
-          border: 1px solid rgba(255, 255, 255, 0.2) !important;
-          color: white !important;
-        }
-
-        /* Clean Drawer Styling */
-        .drawer-custom .ant-drawer-content {
-          background: transparent !important;
-        }
-
-        /* Ensure logo background is transparent */
-        img[alt="GrowthTracker Logo"] {
-          background: transparent !important;
-        }
-
-        /* Remove any background from logo containers */
-        .logo-container {
-          background: transparent !important;
-        }
-
-        /* Custom scrollbar for sidebar */
-        .scrollbar-thin::-webkit-scrollbar {
-          width: 4px;
-        }
-
-        .scrollbar-thin::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 2px;
-        }
-
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.3);
-          border-radius: 2px;
-        }
-
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.5);
-        }
-      `}</style>
     </>
   );
 }

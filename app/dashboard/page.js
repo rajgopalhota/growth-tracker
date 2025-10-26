@@ -27,7 +27,7 @@ import {
 import { motion } from 'framer-motion';
 import GlassCard from '@/components/ui/GlassCard';
 import Link from 'next/link';
-import toast from 'react-hot-toast';
+import toast from '@/lib/notifications';
 
 export default function DashboardPage() {
   const { data: session } = useSession();

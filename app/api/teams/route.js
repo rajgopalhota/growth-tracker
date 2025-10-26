@@ -4,6 +4,7 @@ import { authOptions } from '../auth/[...nextauth]/route';
 import connectMongo from '@/lib/mongo';
 import Team from '@/models/Team';
 import User from '@/models/User';
+import Project from '@/models/Project';
 import Notification from '@/models/Notification';
 
 // GET /api/teams - Get all teams for the user
@@ -19,16 +20,29 @@ export async function GET(request) {
     const teams = await Team.find({
       $or: [
         { owner: session.user.id },
-        { 'members.user': session.user.id },
-        { 'invitedMembers.email': session.user.email }
+        { 'members.user': session.user.id }
       ],
       isActive: true
     })
-      .populate('owner', 'name email image')
-      .populate('members.user', 'name email image')
+      .populate('owner', 'name email avatar')
+      .populate('members.user', 'name email avatar')
       .sort({ updatedAt: -1 });
 
-    return NextResponse.json(teams);
+    // Populate projects for each team
+    const teamsWithProjects = await Promise.all(
+      teams.map(async (team) => {
+        const projects = await Project.find({ team: team._id })
+          .populate('owner', 'name email avatar')
+          .sort({ updatedAt: -1 });
+        
+        return {
+          ...team.toObject(),
+          projects
+        };
+      })
+    );
+
+    return NextResponse.json(teamsWithProjects);
   } catch (error) {
     console.error('Error fetching teams:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -88,23 +102,10 @@ export async function POST(request) {
 
     // Send invitations to invited members
     if (invitedMembers && invitedMembers.length > 0) {
-      const notifications = invitedMembers.map(invite => ({
-        user: invite.email, // This will need to be looked up by email
-        type: 'team_invite',
-        title: 'Team Invitation',
-        message: `${session.user.name} invited you to join the team "${name}"`,
-        data: {
-          itemType: 'team',
-          itemId: team._id,
-          actorId: session.user.id,
-          metadata: { teamName: name, role: invite.role }
-        }
-      }));
-
       // Find users by email and create notifications
       const users = await User.find({ email: { $in: invitedMembers.map(i => i.email) } });
-      const userNotifications = users.map(user => ({
-        user: user._id,
+      const userNotifications = users.map(notifUser => ({
+        user: notifUser._id,
         type: 'team_invite',
         title: 'Team Invitation',
         message: `${session.user.name} invited you to join the team "${name}"`,
@@ -123,8 +124,8 @@ export async function POST(request) {
 
     // Populate the created team
     const populatedTeam = await Team.findById(team._id)
-      .populate('owner', 'name email image')
-      .populate('members.user', 'name email image');
+      .populate('owner', 'name email avatar')
+      .populate('members.user', 'name email avatar');
 
     return NextResponse.json(populatedTeam, { status: 201 });
   } catch (error) {

@@ -39,11 +39,8 @@ import {
   MoreHorizontal,
   ArrowLeft
 } from 'lucide-react';
-import { EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
-import toast from 'react-hot-toast';
+import DynamicQuill from '@/components/DynamicQuill';
+import toast from '@/lib/notifications';
 
 const { TextArea } = Input;
 const { Title, Text, Paragraph } = Typography;
@@ -61,31 +58,7 @@ export default function NoteView() {
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [shareEmail, setShareEmail] = useState('');
   const [sharePermission, setSharePermission] = useState('read');
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: 'text-blue-400 hover:text-blue-300 underline',
-        },
-      }),
-      Image.configure({
-        HTMLAttributes: {
-          class: 'max-w-full h-auto rounded-lg',
-        },
-      }),
-    ],
-    content: '',
-    editable: false,
-    immediatelyRender: false,
-    editorProps: {
-      attributes: {
-        class: 'prose prose-invert max-w-none min-h-[200px] p-4',
-      },
-    },
-  });
+  const [editorContent, setEditorContent] = useState('');
 
   useEffect(() => {
     if (noteId) {
@@ -94,10 +67,10 @@ export default function NoteView() {
   }, [noteId]);
 
   useEffect(() => {
-    if (note && editor) {
-      editor.commands.setContent(note.contentHtml || note.content);
+    if (note) {
+      setEditorContent(note.contentHtml || note.content || '');
     }
-  }, [note, editor]);
+  }, [note]);
 
   const fetchNote = async () => {
     if (!noteId) {
@@ -357,10 +330,12 @@ export default function NoteView() {
 
         {/* Content */}
         <div className="mb-6">
-          <div className="border border-white/10 rounded-lg bg-white/5">
-            <EditorContent 
-              editor={editor}
-              className="min-h-[200px]"
+          <div className="border border-white/10 rounded-lg bg-white/5 p-4">
+            <DynamicQuill
+              value={editorContent}
+              onChange={() => {}}
+              readOnly
+              className="min-h-[200px] bg-transparent"
             />
           </div>
         </div>

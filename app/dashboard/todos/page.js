@@ -1,111 +1,44 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import {
+  Button,
+  Card,
+  DatePicker,
+  Dropdown,
+  Form,
+  Input,
+  Modal,
+  Select,
+  Spin,
+  Typography,
+  message
+} from 'antd';
+import dayjs from 'dayjs';
+import {
+  Calendar,
+  CheckCircle,
+  MoreHorizontal,
+  Plus,
+  Trash2
+} from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { 
-  Card, 
-  Input, 
-  Select, 
-  Button, 
-  Space, 
-  Tag, 
-  message, 
-  Spin,
-  Row,
-  Col,
-  Typography,
-  List,
-  Avatar,
-  Dropdown,
-  Menu,
-  Tooltip,
-  Empty,
-  Badge,
-  Modal,
-  Form,
-  DatePicker,
-  InputNumber,
-  Progress,
-  Drawer
-} from 'antd';
-import { 
-  Plus,
-  Search as SearchIcon,
-  Filter,
-  Grid3X3,
-  List as ListIcon,
-  Edit,
-  Share2,
-  Trash2,
-  Eye,
-  MoreHorizontal,
-  Calendar,
-  User,
-  Users,
-  Flag,
-  Clock,
-  CheckCircle,
-  PlayCircle,
-  PauseCircle,
-  Bug,
-  Rocket,
-  BookOpen,
-  Wrench,
-  Crown,
-  Shield,
-  Star,
-  Link,
-  MessageCircle,
-  Paperclip
-} from 'lucide-react';
-import dayjs from 'dayjs';
+import { useEffect, useState } from 'react';
 
-const { Search: AntSearch } = Input;
-const { Option } = Select;
-const { Title, Text, Paragraph } = Typography;
-
-const statusColumns = [
-  { key: 'backlog', title: 'Backlog', color: '#8c8c8c', icon: <Clock className="w-4 h-4" /> },
-  { key: 'todo', title: 'To Do', color: '#1890ff', icon: <CheckCircle className="w-4 h-4" /> },
-  { key: 'in-progress', title: 'In Progress', color: '#fa8c16', icon: <PlayCircle className="w-4 h-4" /> },
-  { key: 'review', title: 'Review', color: '#722ed1', icon: <PauseCircle className="w-4 h-4" /> },
-  { key: 'done', title: 'Done', color: '#52c41a', icon: <CheckCircle className="w-4 h-4" /> },
-];
-
-const priorityColors = {
-  'lowest': '#8c8c8c',
-  'low': '#52c41a',
-  'medium': '#1890ff',
-  'high': '#fa8c16',
-  'highest': '#f5222d',
-};
-
-const typeIcons = {
-  'task': <CheckCircle className="w-4 h-4" />,
-  'bug': <Bug className="w-4 h-4" />,
-  'story': <BookOpen className="w-4 h-4" />,
-  'epic': <Rocket className="w-4 h-4" />,
-  'subtask': <Wrench className="w-4 h-4" />,
-};
+const { TextArea } = Input;
+const { Title, Text } = Typography;
 
 export default function TodosPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterAssignee, setFilterAssignee] = useState('all');
-  const [filterPriority, setFilterPriority] = useState('all');
-  const [filterType, setFilterType] = useState('all');
-  const [viewMode, setViewMode] = useState('board');
   const [selectedTodo, setSelectedTodo] = useState(null);
-  const [drawerVisible, setDrawerVisible] = useState(false);
-  const [users, setUsers] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [form] = Form.useForm();
 
   useEffect(() => {
     fetchTodos();
-    fetchUsers();
   }, []);
 
   const fetchTodos = async () => {
@@ -128,20 +61,9 @@ export default function TodosPage() {
     }
   };
 
-  const fetchUsers = async () => {
+  const handleToggleDone = async (todoId, currentStatus) => {
     try {
-      const response = await fetch('/api/users');
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data);
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
-  };
-
-  const handleStatusChange = async (todoId, newStatus) => {
-    try {
+      const newStatus = currentStatus === 'done' ? 'todo' : 'done';
       const response = await fetch(`/api/todos/${todoId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -149,34 +71,13 @@ export default function TodosPage() {
       });
 
       if (response.ok) {
-        message.success('Status updated successfully');
         fetchTodos();
       } else {
-        message.error('Failed to update status');
+        message.error('Failed to update todo');
       }
     } catch (error) {
       console.error('Error updating status:', error);
-      message.error('Failed to update status');
-    }
-  };
-
-  const handleAssigneeChange = async (todoId, newAssignee) => {
-    try {
-      const response = await fetch(`/api/todos/${todoId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignee: newAssignee }),
-      });
-
-      if (response.ok) {
-        message.success('Assignee updated successfully');
-        fetchTodos();
-      } else {
-        message.error('Failed to update assignee');
-      }
-    } catch (error) {
-      console.error('Error updating assignee:', error);
-      message.error('Failed to update assignee');
+      message.error('Failed to update todo');
     }
   };
 
@@ -187,7 +88,7 @@ export default function TodosPage() {
       });
 
       if (response.ok) {
-        message.success('Todo deleted successfully');
+        message.success('Todo deleted');
         fetchTodos();
       } else {
         message.error('Failed to delete todo');
@@ -198,45 +99,53 @@ export default function TodosPage() {
     }
   };
 
-  const filteredTodos = todos.filter(todo => {
-    const matchesSearch = todo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         todo.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesAssignee = filterAssignee === 'all' || todo.assignee?._id === filterAssignee;
-    const matchesPriority = filterPriority === 'all' || todo.priority === filterPriority;
-    const matchesType = filterType === 'all' || todo.type === filterType;
-    return matchesSearch && matchesAssignee && matchesPriority && matchesType;
-  });
+  const handleSaveTodo = async (values) => {
+    try {
+      const todoData = {
+        ...values,
+        dueDate: values.dueDate ? values.dueDate.toISOString() : null,
+        reporter: session.user.id,
+        status: values.status || 'todo',
+      };
 
-  const todosByStatus = statusColumns.reduce((acc, column) => {
-    acc[column.key] = filteredTodos.filter(todo => todo.status === column.key);
-    return acc;
-  }, {});
+      const response = await fetch('/api/todos', {
+        method: selectedTodo ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(selectedTodo ? { ...todoData, _id: selectedTodo._id } : todoData),
+      });
+
+      if (response.ok) {
+        message.success(selectedTodo ? 'Todo updated' : 'Todo created');
+        setModalVisible(false);
+        setSelectedTodo(null);
+        form.resetFields();
+        fetchTodos();
+      } else {
+        message.error('Failed to save todo');
+      }
+    } catch (error) {
+      console.error('Error saving todo:', error);
+      message.error('Failed to save todo');
+    }
+  };
+
+  const handleOpenModal = (todo = null) => {
+    setSelectedTodo(todo);
+    if (todo) {
+      form.setFieldsValue({
+        ...todo,
+        dueDate: todo.dueDate ? dayjs(todo.dueDate) : null,
+      });
+    } else {
+      form.resetFields();
+    }
+    setModalVisible(true);
+  };
+
+  const pendingTodos = todos.filter(todo => todo.status !== 'done');
+  const completedTodos = todos.filter(todo => todo.status === 'done');
 
   const getMenuItems = (todo) => [
-    {
-      key: 'view',
-      icon: <Eye className="w-4 h-4" />,
-      label: 'View Details',
-      onClick: () => {
-        setSelectedTodo(todo);
-        setDrawerVisible(true);
-      },
-    },
-    {
-      key: 'edit',
-      icon: <Edit className="w-4 h-4" />,
-      label: 'Edit',
-      onClick: () => router.push(`/dashboard/todos/${todo._id}/edit`),
-    },
-    {
-      key: 'share',
-      icon: <Share2 className="w-4 h-4" />,
-      label: 'Share',
-      onClick: () => message.info('Share functionality coming soon'),
-    },
-    {
-      type: 'divider',
-    },
     {
       key: 'delete',
       icon: <Trash2 className="w-4 h-4" />,
@@ -245,91 +154,6 @@ export default function TodosPage() {
       onClick: () => handleDelete(todo._id),
     },
   ];
-
-  const TodoCard = ({ todo }) => (
-    <Card
-      size="small"
-      className="mb-3 cursor-pointer hover:shadow-lg transition-all duration-200"
-      onClick={() => {
-        setSelectedTodo(todo);
-        setDrawerVisible(true);
-      }}
-      actions={[
-        <Dropdown
-          menu={{ items: getMenuItems(todo) }}
-          trigger={['click']}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <MoreHorizontal className="w-4 h-4" />
-        </Dropdown>,
-      ]}
-    >
-      <div className="space-y-2">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            {typeIcons[todo.type]}
-            <Text className="text-gray-400 text-xs">#{todo._id.slice(-6)}</Text>
-          </div>
-          <Tag color={priorityColors[todo.priority]} className="text-xs">
-            {todo.priority}
-          </Tag>
-        </div>
-        
-        <Title level={5} className="text-white mb-2 line-clamp-2">
-          {todo.title}
-        </Title>
-        
-        {todo.description && (
-          <Paragraph className="text-gray-300 text-sm line-clamp-2 mb-2">
-            {todo.description}
-          </Paragraph>
-        )}
-        
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            {todo.assignee ? (
-              <Avatar size="small" src={todo.assignee.image} />
-            ) : (
-              <Avatar size="small" icon={<User className="w-3 h-3" />} />
-            )}
-            <Text className="text-gray-400">
-              {todo.assignee?.name || 'Unassigned'}
-            </Text>
-          </div>
-          {todo.dueDate && (
-            <div className="flex items-center gap-1">
-              <Calendar className="w-3 h-3 text-gray-400" />
-              <Text className="text-gray-400">
-                {dayjs(todo.dueDate).format('MMM DD')}
-              </Text>
-            </div>
-          )}
-        </div>
-        
-        {todo.storyPoints && (
-          <div className="flex items-center gap-2">
-            <Star className="w-3 h-3 text-gray-400" />
-            <Text className="text-gray-400 text-xs">{todo.storyPoints} pts</Text>
-          </div>
-        )}
-        
-        {todo.labels && todo.labels.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {todo.labels.slice(0, 2).map(label => (
-              <Tag key={label} className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-xs">
-                {label}
-              </Tag>
-            ))}
-            {todo.labels.length > 2 && (
-              <Tag className="bg-gray-500/20 text-gray-300 border-gray-500/30 text-xs">
-                +{todo.labels.length - 2}
-              </Tag>
-            )}
-          </div>
-        )}
-      </div>
-    </Card>
-  );
 
   if (loading) {
     return (
@@ -340,293 +164,264 @@ export default function TodosPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <Title level={2} className="text-white mb-2">Todos</Title>
-          <Text className="text-gray-400">Manage your tasks and track progress</Text>
+      <div className="sticky top-0 z-10 mb-6">
+        <div className="mx-auto px-4 md:px-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <Title level={1} className="text-white mb-0 text-3xl font-bold">
+                To-dos
+              </Title>
+              <Text className="text-gray-400 text-sm">
+                {pendingTodos.length} {pendingTodos.length === 1 ? 'task' : 'tasks'}
+              </Text>
+            </div>
+          </div>
         </div>
-        <Button
-          type="primary"
-          icon={<Plus className="w-4 h-4" />}
-          onClick={() => router.push('/dashboard/todos/new')}
-          size="large"
-        >
-          New Todo
-        </Button>
       </div>
 
-      {/* Filters and Search */}
-      <Card className="bg-black/20 backdrop-blur-xl border-white/10">
-        <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} sm={12} md={6}>
-            <AntSearch
-              placeholder="Search todos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
-            />
-          </Col>
-          <Col xs={12} sm={6} md={4}>
-            <Select
-              placeholder="Assignee"
-              value={filterAssignee}
-              onChange={setFilterAssignee}
-              className="w-full"
-              options={[
-                { value: 'all', label: 'All Assignees' },
-                ...users.map(user => ({
-                  value: user._id,
-                  label: user.name,
-                })),
-              ]}
-            />
-          </Col>
-          <Col xs={12} sm={6} md={4}>
-            <Select
-              placeholder="Priority"
-              value={filterPriority}
-              onChange={setFilterPriority}
-              className="w-full"
-              options={[
-                { value: 'all', label: 'All Priorities' },
-                { value: 'lowest', label: 'Lowest' },
-                { value: 'low', label: 'Low' },
-                { value: 'medium', label: 'Medium' },
-                { value: 'high', label: 'High' },
-                { value: 'highest', label: 'Highest' },
-              ]}
-            />
-          </Col>
-          <Col xs={12} sm={6} md={4}>
-            <Select
-              placeholder="Type"
-              value={filterType}
-              onChange={setFilterType}
-              className="w-full"
-              options={[
-                { value: 'all', label: 'All Types' },
-                { value: 'task', label: 'Task' },
-                { value: 'bug', label: 'Bug' },
-                { value: 'story', label: 'Story' },
-                { value: 'epic', label: 'Epic' },
-                { value: 'subtask', label: 'Subtask' },
-              ]}
-            />
-          </Col>
-          <Col xs={12} sm={6} md={6}>
-            <Space className="w-full justify-end">
-              <Button
-                icon={<Grid3X3 className="w-4 h-4" />}
-                type={viewMode === 'board' ? 'primary' : 'default'}
-                onClick={() => setViewMode('board')}
-              >
-                Board
-              </Button>
-              <Button
-                icon={<List className="w-4 h-4" />}
-                type={viewMode === 'list' ? 'primary' : 'default'}
-                onClick={() => setViewMode('list')}
-              >
-                List
-              </Button>
-            </Space>
-          </Col>
-        </Row>
-      </Card>
-
-      {/* Board View */}
-      {viewMode === 'board' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          {statusColumns.map(column => (
-            <Card
-              key={column.key}
-              className="bg-black/20 backdrop-blur-xl border-white/10"
-              title={
-                <div className="flex items-center gap-2">
-                  <span style={{ color: column.color }}>{column.icon}</span>
-                  <Text className="text-white">{column.title}</Text>
-                  <Badge count={todosByStatus[column.key]?.length || 0} />
-                </div>
-              }
-            >
-              <div className="min-h-[400px]">
-                {todosByStatus[column.key]?.map(todo => (
-                  <TodoCard key={todo._id} todo={todo} />
-                ))}
-                {(!todosByStatus[column.key] || todosByStatus[column.key].length === 0) && (
-                  <div className="text-center py-8 text-gray-400">
-                    <Text>No todos in this status</Text>
-                  </div>
-                )}
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        /* List View */
-        <Card className="bg-black/20 backdrop-blur-xl border-white/10">
-          <List
-            dataSource={filteredTodos}
-            renderItem={todo => (
-              <List.Item
-                actions={[
-                <Dropdown
-                  menu={{ items: getMenuItems(todo) }}
-                  trigger={['click']}
+      {/* Content */}
+      <div className="mx-auto px-4 md:px-6">
+        {/* Pending Todos */}
+        {pendingTodos.length > 0 && (
+          <div className="mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {pendingTodos.map((todo) => (
+                <div
+                  key={todo._id}
+                  className="group relative bg-gradient-to-br from-gray-700 to-gray-800 border border-gray-800/50 rounded-3xl p-6 hover:border-orange-500/50 transition-all duration-300 cursor-pointer shadow-lg hover:shadow-2xl hover:shadow-orange-500/10"
+                  onClick={() => handleToggleDone(todo._id, todo.status)}
                 >
-                  <MoreHorizontal className="w-4 h-4" />
-                </Dropdown>,
-                ]}
-              >
-                <List.Item.Meta
-                  avatar={
-                    <div className="flex items-center gap-2">
-                      {typeIcons[todo.type]}
-                      <Tag color={priorityColors[todo.priority]}>
-                        {todo.priority}
-                      </Tag>
-                    </div>
-                  }
-                  title={
-                    <div className="flex items-center gap-2">
-                      <Text className="text-white">#{todo._id.slice(-6)}</Text>
-                      <Text className="text-white">{todo.title}</Text>
-                    </div>
-                  }
-                  description={
-                    <div className="space-y-2">
-                      <Paragraph className="text-gray-300 mb-0">
-                        {todo.description}
-                      </Paragraph>
-                      <div className="flex items-center gap-4 text-sm">
-                        <Space>
-                          <User className="w-4 h-4 text-gray-400" />
-                          <Text className="text-gray-400">
-                            {todo.assignee?.name || 'Unassigned'}
-                          </Text>
-                        </Space>
-                        <Space>
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          <Text className="text-gray-400">
-                            {todo.dueDate ? dayjs(todo.dueDate).format('MMM DD, YYYY') : 'No due date'}
-                          </Text>
-                        </Space>
-                        {todo.storyPoints && (
-                          <Space>
-                            <Star className="w-4 h-4 text-gray-400" />
-                            <Text className="text-gray-400">{todo.storyPoints} pts</Text>
-                          </Space>
-                        )}
+                  {/* Hover glow effect */}
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-orange-500/0 to-orange-500/0 group-hover:from-orange-500/5 group-hover:to-transparent transition-all duration-300 pointer-events-none" />
+                  
+                  <div className="relative flex items-start gap-4">
+                    {/* Checkbox circle */}
+                    <div className="mt-1 flex-shrink-0">
+                      <div className="w-6 h-6 rounded-full border-2 border-gray-600 group-hover:border-orange-500 transition-all duration-300 flex items-center justify-center">
+                        <div className="w-3 h-3 rounded-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </div>
                     </div>
-                  }
-                />
-              </List.Item>
-            )}
-          />
-        </Card>
-      )}
-
-      {/* Todo Details Drawer */}
-      <Drawer
-        title="Todo Details"
-        placement="right"
-        onClose={() => setDrawerVisible(false)}
-        open={drawerVisible}
-        width={600}
-      >
-        {selectedTodo && (
-          <div className="space-y-6">
-            <div>
-              <Title level={3} className="text-white mb-2">
-                {selectedTodo.title}
-              </Title>
-              <div className="flex items-center gap-2 mb-4">
-                <Tag color={priorityColors[selectedTodo.priority]}>
-                  {selectedTodo.priority}
-                </Tag>
-                <Tag>{selectedTodo.type}</Tag>
-                <Tag color="blue">#{selectedTodo._id.slice(-6)}</Tag>
-              </div>
-            </div>
-
-            <div>
-              <Title level={5} className="text-white mb-2">Description</Title>
-              <Paragraph className="text-gray-300">
-                {selectedTodo.description || 'No description provided'}
-              </Paragraph>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Title level={5} className="text-white mb-2">Assignee</Title>
-                <div className="flex items-center gap-2">
-                  {selectedTodo.assignee ? (
-                    <>
-                      <Avatar src={selectedTodo.assignee.image} />
-                      <Text className="text-gray-300">{selectedTodo.assignee.name}</Text>
-                    </>
-                  ) : (
-                    <Text className="text-gray-400">Unassigned</Text>
-                  )}
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <Text className="text-white text-lg font-semibold block mb-2 line-clamp-2 leading-tight">
+                        {todo.title}
+                      </Text>
+                      {todo.description && (
+                        <Text className="text-gray-400 text-sm mt-2 block line-clamp-2 leading-relaxed">
+                          {todo.description}
+                        </Text>
+                      )}
+                      {todo.dueDate && (
+                        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-800/50">
+                          <Calendar className="w-4 h-4 text-orange-500" />
+                          <Text className="text-gray-400 text-sm font-medium">
+                            {dayjs(todo.dueDate).format('MMM DD, YYYY')}
+                          </Text>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* More menu */}
+                    <Dropdown
+                      menu={{ items: getMenuItems(todo) }}
+                      trigger={['click']}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button
+                        type="text"
+                        icon={<MoreHorizontal className="w-5 h-5" />}
+                        className="text-gray-500 hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-gray-800/50 rounded-lg p-2"
+                      />
+                    </Dropdown>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <Title level={5} className="text-white mb-2">Reporter</Title>
-                <div className="flex items-center gap-2">
-                  <Avatar src={selectedTodo.reporter?.image} />
-                  <Text className="text-gray-300">{selectedTodo.reporter?.name}</Text>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Title level={5} className="text-white mb-2">Due Date</Title>
-                <Text className="text-gray-300">
-                  {selectedTodo.dueDate ? dayjs(selectedTodo.dueDate).format('MMM DD, YYYY') : 'No due date'}
-                </Text>
-              </div>
-              <div>
-                <Title level={5} className="text-white mb-2">Story Points</Title>
-                <Text className="text-gray-300">
-                  {selectedTodo.storyPoints || 'Not estimated'}
-                </Text>
-              </div>
-            </div>
-
-            {selectedTodo.labels && selectedTodo.labels.length > 0 && (
-              <div>
-                <Title level={5} className="text-white mb-2">Labels</Title>
-                <div className="flex flex-wrap gap-1">
-                  {selectedTodo.labels.map(label => (
-                    <Tag key={label} className="bg-blue-500/20 text-blue-300 border-blue-500/30">
-                      {label}
-                    </Tag>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              <Button
-                icon={<Edit className="w-4 h-4" />}
-                onClick={() => router.push(`/dashboard/todos/${selectedTodo._id}/edit`)}
-              >
-                Edit
-              </Button>
-              <Button
-                icon={<Share2 className="w-4 h-4" />}
-                onClick={() => message.info('Share functionality coming soon')}
-              >
-                Share
-              </Button>
+              ))}
             </div>
           </div>
         )}
-      </Drawer>
+
+        {/* Completed Todos */}
+        {completedTodos.length > 0 && (
+          <div>
+            <div className="flex items-center gap-4 mb-6">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-800 to-gray-800"></div>
+              <Text className="text-gray-500 text-sm font-semibold px-4">
+                Completed ({completedTodos.length})
+              </Text>
+              <div className="h-px flex-1 bg-gradient-to-l from-transparent via-gray-800 to-gray-800"></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {completedTodos.map((todo) => (
+                <div
+                  key={todo._id}
+                  className="group relative bg-gradient-to-br from-gray-200/20 to-gray-100/20 border border-gray-800/30 rounded-3xl p-6 hover:border-gray-700/50 transition-all duration-300 cursor-pointer opacity-70 hover:opacity-90"
+                  onClick={() => handleToggleDone(todo._id, todo.status)}
+                >
+                  <div className="relative flex items-start gap-4">
+                    {/* Checked circle */}
+                    <div className="mt-1 w-6 h-6 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-orange-500/30">
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <Text className="text-white text-lg font-semibold block mb-2 line-clamp-2 leading-tight line-through decoration-2 decoration-gray-600">
+                        {todo.title}
+                      </Text>
+                      {todo.description && (
+                        <Text className="text-gray-500 text-sm mt-2 block line-clamp-2 leading-relaxed line-through decoration-1 decoration-gray-700">
+                          {todo.description}
+                        </Text>
+                      )}
+                    </div>
+                    
+                    {/* More menu */}
+                    <Dropdown
+                      menu={{ items: getMenuItems(todo) }}
+                      trigger={['click']}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button
+                        type="text"
+                        icon={<MoreHorizontal className="w-5 h-5" />}
+                        className="text-gray-600 hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-gray-800/50 rounded-lg p-2"
+                      />
+                    </Dropdown>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {todos.length === 0 && !loading && (
+          <div className="text-center py-24">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-900 border border-gray-800 mb-6">
+              <CheckCircle className="w-10 h-10 text-gray-600" />
+            </div>
+            <Text className="text-gray-400 text-lg block mb-8 font-medium">
+              No tasks yet
+            </Text>
+            <Button
+              type="primary"
+              size="large"
+              icon={<Plus className="w-5 h-5" />}
+              onClick={() => handleOpenModal()}
+              className="bg-orange-500 border-orange-500 hover:bg-orange-600 hover:border-orange-600 h-14 px-8 rounded-full text-base font-semibold shadow-lg shadow-orange-500/20"
+            >
+              Create your first task
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Floating Action Button */}
+      <button
+        onClick={() => handleOpenModal()}
+        className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-full shadow-2xl shadow-orange-500/40 flex items-center justify-center transition-all duration-300 z-50 hover:scale-110 active:scale-95"
+        aria-label="Add new todo"
+      >
+        <Plus className="w-7 h-7 text-white" />
+      </button>
+
+      {/* Create/Edit Todo Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-white" />
+            </div>
+            <Text className="text-white text-xl font-semibold">
+              {selectedTodo ? 'Edit Task' : 'New Task'}
+            </Text>
+          </div>
+        }
+        open={modalVisible}
+        onCancel={() => {
+          setModalVisible(false);
+          setSelectedTodo(null);
+          form.resetFields();
+        }}
+        footer={null}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSaveTodo}
+          className="mt-2"
+        >
+          <Form.Item
+            name="title"
+            label={<Text className="text-white text-sm font-semibold mb-2 block">Title</Text>}
+            rules={[{ required: true, message: 'Please enter a title' }]}
+          >
+            <Input
+              size="large"
+              placeholder="What needs to be done?"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="description"
+            label={<Text className="text-white text-sm font-semibold mb-2 block">Description</Text>}
+          >
+            <TextArea
+              rows={4}
+              placeholder="Add more details..."
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="priority"
+            label={<Text className="text-white text-sm font-semibold mb-2 block">Priority</Text>}
+          >
+            <Select
+              size="large"
+              placeholder="Select priority"
+              options={[
+                { value: 'low', label: 'Low' },
+                { value: 'medium', label: 'Medium' },
+                { value: 'high', label: 'High' },
+              ]}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="dueDate"
+            label={<Text className="text-white text-sm font-semibold mb-2 block">Due Date</Text>}
+          >
+            <DatePicker
+              size="large"
+              className="w-full bg-gray-900 border-gray-700 rounded-xl hover:border-orange-500/50"
+              placeholder="Set a due date"
+            />
+          </Form.Item>
+
+          <div className="flex gap-3 mt-8">
+            <Button
+              className="flex-1 h-12 bg-gray-900 border-gray-700 text-white hover:bg-gray-800 hover:border-gray-600 rounded-xl font-semibold"
+              onClick={() => {
+                setModalVisible(false);
+                setSelectedTodo(null);
+                form.resetFields();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="flex-1 h-12 bg-gradient-to-r from-orange-500 to-orange-600 border-orange-500 hover:from-orange-600 hover:to-orange-700 rounded-xl font-semibold shadow-lg shadow-orange-500/20"
+            >
+              {selectedTodo ? 'Update' : 'Create'}
+            </Button>
+          </div>
+        </Form>
+      </Modal>
     </div>
   );
 }

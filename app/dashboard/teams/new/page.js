@@ -34,7 +34,7 @@ import {
   Crown,
   Shield
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import toast from '@/lib/notifications';
 
 const { TextArea } = Input;
 const { Option } = Select;

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectMongo from '@/lib/mongo';
 import User from '@/models/User';
 import { hash } from 'bcryptjs';
+import { generateTokenPair } from '@/lib/jwt';
 
 export async function POST(request) {
   try {
@@ -26,20 +27,45 @@ export async function POST(request) {
     }
 
     // Hash password
-    const hashedPassword = await hash(password, 12);
+    const passwordHash = await hash(password, 12);
 
     // Create new user
     const user = await User.create({
       name,
       email,
-      password: hashedPassword,
+      passwordHash,
       role: 'user',
+      avatar: 'avatar1.png',
+      lastSeen: new Date()
     });
 
-    return NextResponse.json(
-      { message: 'User created successfully', userId: user._id },
+    // Generate tokens
+    const { accessToken, refreshToken } = generateTokenPair(user);
+
+    // Create response
+    const response = NextResponse.json(
+      { 
+        message: 'User created successfully',
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          avatar: user.avatar
+        },
+        accessToken
+      },
       { status: 201 }
     );
+
+    // Set HTTP-only cookie for refresh token
+    response.cookies.set('token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7 // 7 days
+    });
+
+    return response;
   } catch (error) {
     console.error('Signup error:', error);
     return NextResponse.json(
